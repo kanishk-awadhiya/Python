@@ -1,0 +1,132 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+%matplotlib inline
+plt.style.use('ggplot')
+
+from pylab import rcParams
+rcParams['figure.figsize'] = 12,8  #set default value of figure size to 12 and 8
+
+data = pd.read_csv('DMV_Written_Tests.csv')  #Driver license knowledge Test Dataset
+data.head()
+data.info()
+
+scores = data[['DMV_Test_1','DMV_Test_2']].values
+results = data['Results'].values
+
+passed = (results==1).reshape(100,1)
+failed = (results==0).reshape(100,1)
+
+#plot the scores dataset with Test1 in x-axis and Test2 in y-axis
+ax = sns.scatterplot(x = scores[passed[:,0],0],
+                     y = scores[passed[:,0],1],
+                     size=60,
+                     color='green',
+                     marker='^')
+                 
+sns.scatterplot(x = scores[failed[:,0],0],
+                y = scores[failed[:,0],1],
+                size=60,
+                color='red',
+                marker='X')               
+    
+ax.set(xlabel='DMV Written Test 1 Scores', ylabel='DMV Written Test 2 Scores')
+ax.legend(['Passed','Failed'])
+plt.show()
+
+#Define sigmoid function
+def logistic_function(x):
+    return 1 / (1 + np.exp(-x))
+    
+#Compute the cost function for logistic regression
+def compute_cost(theta, x, y):
+    m = len(y)
+    y_pred = logistic_function(np.dot(x, theta))
+    error = (y * np.log(y_pred) + (1 - y) * np.log(1 - y_pred))
+    cost = -1/m * sum(error)
+    
+    #gradient of cost function is given by
+    gradient = 1/m * np.dot(x.transpose(), (y_pred - y))
+    
+    return cost[0], gradient  
+    '''
+    by zero indexing we call out element inside the list
+    but we are not summing up the 3 elements in the gradient 
+    because of theta, in gradient descent function below when 
+    we negate the theta by aplha*gradient we need theta shape 
+    of (3,1) so if we zero index gradient[0], we will get theta 
+    shape to be (1,1) and this will eventually effect cost function
+    '''
+    
+#normaliza the data
+mean_scores = np.mean(scores, axis=0)
+std_scores = np.mean(scores, axis=0)
+scores = (scores - mean_scores)/std_scores
+
+rows = scores.shape[0]
+cols = scores.shape[1]
+
+#initialize the parameters
+X = np.append(np.ones((rows,1)),scores,axis=1) #appending one more column in X for matching the shape with theta
+y = results.reshape(rows,1)
+
+theta_init = np.zeros((cols + 1, 1)) #adding one more column for bias
+cost, gradient = compute_cost(theta_init,X,y)
+
+print('Cost at initialization', cost)
+print('Gradient at initialization', gradient)
+
+#defining gradeint descent
+def gradient_descent(x, y, theta, alpha, iterations):
+    costs = [] #to keep track of costs
+    
+    for i in range(iterations):
+        cost, gradient = compute_cost(theta,x,y)
+        theta -= (aplha*gradient)
+        costs.append(cost)
+    return theta, costs 
+  
+theta, costs = gradient_descent(X ,y ,theta_init ,1 ,200)
+print('Theta after running gradient descent',theta)
+print('Resulting cost:',costs[-1])
+
+#plot the cost of model
+plt.plot(range(200),costs)  OR  plt.plot(costs)
+plt.xlabel('Iterations')
+plt.ylabel('$J(\Theta)$') #use of latex format
+plt.title('Values of Cost functions over iterations of Gradient descent')
+
+#plotting the decision boundary 
+ax = sns.scatterplot(x = scores[passed[:,0],0],
+                     y = scores[passed[:,0],1],
+                     size=60,
+                     color='green',
+                     marker='^')
+                 
+sns.scatterplot(x = scores[failed[:,0],0],
+                y = scores[failed[:,0],1],
+                size=60,
+                color='red',
+                marker='X')
+ax.legend(['Passed','Failed'])
+ax.set(xlabel='DMV Written Test 1 Scores', ylabel='DMV Written Test 2 Scores')
+
+x_boundary = np.array([np.min(X[:,1]),np.max(X[:,1])])
+y_boundary = -(theta[0] + theta[1]*x_boundary) / theta[2] #equation to create decision boundary
+
+sns.lineplot(x_boundary,y_boundary,color='blue')
+plt.show()
+
+def predict(x,theta):
+    results = logistic_function(x.dot(theta))
+    return results > 0.5 #to check for positive class our model has predicted
+
+p = predict(X,theta)
+print('Training Accuracy is',sum(p==y)[0],'%')
+
+test = np.array([50,71])
+test = (test - mean_scores)/std_scores 
+test = np.append(np.ones(1),test)
+probability = logistic_function(test.dot(theta))
+print('A person who scored 50 and 70 in Test1 and Test2 has',np.round(probability[0],2),'probability of passing')
