@@ -39,4 +39,59 @@ def gradient_descent(X,y,theta,alpha,iterations):
 theta , costs = gradient_descent(X ,y ,theta ,alpha = 0.01, iterations = 1000)
 print('h(x) = {} + {}x1'.format(str(round(theta[0,0],2)),str(round(theta[1,0],2)))) #theta[0,0] gives intercept term, theta[1,0] gives model coefficient value
 
+#visualizing the cost function of theta 0 and theta 1 values
 from mpl_toolkits.mplot3d import Axes3D #provides some basic 3d plotting
+
+theta_0 = np.linspace(-10,10,100) #theta_0 has values between -10 and 10 from the above values (line 40)
+theta_1 = np.linspace(-1,4,100) #theta_1 has values between -4 and 1
+
+cost_values = np.zeros((len(theta_0),len(theta_1)))
+
+for i in range(len(theta_0)):
+    for j in range(len(theta_1)):
+        t = np.array([theta_0[i], theta_1[j]]) #get the all possible points or values for theta_0 and theta_1 for cost function below
+        cost_values[i, j] = cost_function(X, y, t)
+        
+#plot the cost values
+fig = plt.figure(figsize = (12,8))
+
+#create a 3d projection on top of 2d plot
+ax = plt.gca(projection = '3d')
+
+#create surface
+surf = ax.plot_surface(theta_0, theta_1, cost_values, cmap = 'viridis') #cmap can be magma, plasma, inferno, cividis
+
+fig.colorbar(surf, shrink=0.5, aspect=5)
+
+plt.xlabel('$\Theta_0$') # $ sign used for latex format, \T is used instead of \t because \t is used for tab
+plt.ylabel('$\Theta_1$')
+ax.set_zlabel('$J(\Theta)$')
+ax.view_init(30,300) #rotate the view and set the initial angle to elevation angle in z-axis, azimuth angle in x,y plane
+
+plt.show()
+
+#Plot the cost convergence
+plt.plot(costs)
+plt.xlabel('Iterations')
+plt.ylabel('$J(\Theta)$')
+plt.title('Values of Cost Functions over Iterations of Gradient Descent');
+
+#training data for linear regression
+theta = np.squeeze(theta) #to get rid of extra dimensions of theta or outer lists
+sns.scatterplot(x='Population', y='Profit', data=data) #this is from above plot
+
+x_value = [x for x in range(5,25)]
+y_value = [(x * theta[1] + theta[0]) for x in x_value]
+sns.lineplot(x_value, y_value)
+
+plt.xlabel('Population in 10000s')
+plt.ylabel('Profit in ')
+plt.title('Linear Regression Fit')
+
+#inference using the optimized theta values
+def predict(x, theta):
+    y_pred = np.dot(theta.transpose(),x)
+    return y_pred
+
+y_pred_1 = predict(np.array([1,4]),theta)*10000  #[1,4], 1 for bias term and 4 for 40000, 4 * 10000 outside
+print('For a population of 40,000 people, the model predicts the profit of $'+ str(round(y_pred_1, 0)))
